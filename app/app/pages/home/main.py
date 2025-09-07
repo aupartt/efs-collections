@@ -43,6 +43,22 @@ def _collection_details(collection: pd.Series, container=st):
     panels.area_chart_fill_rate(snapshots, container=collection_container)
 
 
+def _global_view(data: pd.DataFrame, container):
+    c1, c2 = container.columns(2)
+    panels.hist_next_collections(data, container=c1, height=500)
+    panels.calendar_collections(data, container=c2, height=500)
+
+
+def _get_data() -> pd.DataFrame:
+    df_actives_collections = services.get_collections()
+    df_locations = services.get_locations(location_ids=df_actives_collections.location_id)
+    df_joined = df_actives_collections.join(df_locations, rsuffix="_location", on="location_id")
+
+    df_snapshots = services.get_collection_snapshots(collection_ids=df_actives_collections.index.values)
+    df_joined = df_joined.join(df_snapshots, rsuffix="_snap").sort_values(by=["start_date"])
+    return df_joined
+
+
 def display_page():
     try:
         st.set_page_config(
@@ -51,12 +67,7 @@ def display_page():
         st.sidebar.title("Futures collectes mobiles (EFS) en Bretagne.")
 
         # Data
-        df_actives_collections = services.get_collections()
-        df_locations = services.get_locations(location_ids=df_actives_collections.location_id)
-        df_joined = df_actives_collections.join(df_locations, rsuffix="_location", on="location_id")
-
-        df_snapshots = services.get_collection_snapshots(collection_ids=df_actives_collections.index.values)
-        df_joined = df_joined.join(df_snapshots, rsuffix="_snap").sort_values(by=["start_date"])
+        df = _get_data()
 
         main = st.container(border=None)
         sidebar = st.sidebar.container(width="stretch", border=None)
@@ -64,23 +75,22 @@ def display_page():
         # --- Collection ---
         # Selector
         sidebar.subheader("Collectes", divider="red")
-        panels.table_collections(df_joined, container=sidebar, height=500)
+        panels.table_collections(df, container=sidebar, height=500)
 
         # Details
-        panels.map_locations(df_joined, container=main, height=250)
+        panels.map_locations(df, container=main, height=250)
 
         selected_collection = st.session_state.selected_collection
-        collection = df_joined.loc[selected_collection] if selected_collection else pd.Series()
+        collection = df.loc[selected_collection] if selected_collection else pd.Series()
 
         if collection.empty:
-            c1, c2 = main.columns(2)
-            panels.hist_next_collections(df_joined, container=c1, height=500)
-            panels.calendar_collections(df_joined, container=c2, height=500)
+            _global_view(df, main)
         else:
             _collection_details(collection, main)
 
         # --- Event ---
         # Selector
+
         sidebar.subheader("Évènements", divider="red")
         event_list_container = sidebar.container(
             height=100 if collection.empty else "stretch",
