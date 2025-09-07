@@ -4,6 +4,8 @@ import pydeck as pdk
 import streamlit as st
 from streamlit_calendar import calendar
 
+from app.config import Colors
+
 # from app.config import Colors
 
 
@@ -24,13 +26,13 @@ def calendar_collections(data: pd.DataFrame, container=st, **kwargs) -> dict:
         "showNonCurrentDates": True,
         "fixedWeekCount": False,
         "firstDay": 1,
-        # "eventBackgroundColor": Colors.Str.lightred,
+        "eventBackgroundColor": Colors.Str.lightred,
         "eventBorderColor": "darkred",
         **kwargs,
     }
     calendar_events = [
         {
-            "title": f"{event.city} - {event.post_code}",
+            "title": f"{event.city} ({idx})",
             "start": event.start_date.strftime("%Y-%m-%d"),
             "end": event.end_date.strftime("%Y-%m-%d"),
             "id": idx,
@@ -38,17 +40,20 @@ def calendar_collections(data: pd.DataFrame, container=st, **kwargs) -> dict:
         for idx, event in df.iterrows()
     ]
     custom_css = """
-        .fc-event-past {
-            // opacity: 0.8;
-        }
-        .fc-event-time {
-            // font-style: italic;
+        .fc {
+            font-size: 0.8rem;
+            scrollbar-width: none;
+            scrollbar-color: transparent transparent;
+            --fc-border-color: #424242;
+            --fc-today-bg-color: #ff4b4b42;
+            // --fc-highlight-color: #ff4b4b9b;
+            --fc-button-bg-color: #ff4b4b9b;
         }
         .fc-event-title {
             // font-weight: 700;
         }
         .fc-toolbar-title {
-            // font-size: 2rem;
+            font-size: 1.3rem;
             text-transform: capitalize;
         }
     """

@@ -16,38 +16,38 @@ def display_table(data: list, **kwargs):
 
 def _collection_details(collection: pd.Series, container=st):
     collection_container = container.container(
-        height="stretch",
+        height=250 if collection.empty else "stretch",
         horizontal_alignment="center" if collection.empty else "left",
         vertical_alignment="center" if collection.empty else "top",
         border=False,
     )
-    if not collection.empty:
-        c1, c2 = collection_container.columns(2)
-        c1.markdown(f"##### {collection.full_address}")
-        subcontainer = c1.container(
-            vertical_alignment="center",
-            horizontal_alignment="left",
-            horizontal=True,
-        )
-        subcontainer.text(f"Suivis depuis le {collection.created_at.strftime('%d/%m/%Y')}")
-        subcontainer.link_button("Lien collecte", url=f"http://{collection.url_blood}", icon=":material/open_in_new:")
 
-        total_days = (collection.start_date.date() - collection.created_at.date()).days
-        current_days = (datetime.now().date() - collection.created_at.date()).days
+    container.subheader("Collectes - détails", divider="red")
+    c1, c2 = collection_container.columns(2)
+    c1.markdown(f"##### {collection.full_address}")
+    subcontainer = c1.container(
+        vertical_alignment="center",
+        horizontal_alignment="left",
+        horizontal=True,
+    )
+    subcontainer.text(f"Suivis depuis le {collection.created_at.strftime('%d/%m/%Y')}")
+    subcontainer.link_button("Lien collecte", url=f"http://{collection.url_blood}", icon=":material/open_in_new:")
 
-        # st.write(type(res), res)
-        c2.progress(current_days / total_days, f"Débute dans **{total_days - current_days}j**")
-        # panels.calendar_collections(collection, container=c2, height=500)
+    total_days = (collection.start_date.date() - collection.created_at.date()).days
+    current_days = (datetime.now().date() - collection.created_at.date()).days
 
-        snapshots = services.get_collection_snapshots([st.session_state.selected_collection], only_last=False)
-        panels.area_chart_fill_rate(snapshots, container=collection_container)
-    else:
-        collection_container.text("aucune collecte séléctionné.")
+    # st.write(type(res), res)
+    c2.progress(current_days / total_days, f"Débute dans **{total_days - current_days}j**")
+
+    snapshots = services.get_collection_snapshots([st.session_state.selected_collection], only_last=False)
+    panels.area_chart_fill_rate(snapshots, container=collection_container)
 
 
 def display_page():
     try:
-        st.set_page_config(page_title="Home", page_icon="🌍", layout="wide")
+        st.set_page_config(
+            page_title="Home | ma-collecte", page_icon="🩸", layout="wide", initial_sidebar_state="expanded"
+        )
         st.sidebar.title("Futures collectes mobiles (EFS) en Bretagne.")
 
         # Data
@@ -58,28 +58,31 @@ def display_page():
         df_snapshots = services.get_collection_snapshots(collection_ids=df_actives_collections.index.values)
         df_joined = df_joined.join(df_snapshots, rsuffix="_snap").sort_values(by=["start_date"])
 
-        c2 = st.container(border=None)
-        c1 = st.sidebar.container(width="stretch")
-
-        panels.hist_next_collections(df_joined, container=c1, height=250)
+        main = st.container(border=None)
+        sidebar = st.sidebar.container(width="stretch", border=None)
 
         # --- Collection ---
         # Selector
-        c1.subheader("Collectes - liste", divider="red")
-        panels.table_collections(df_joined, container=c1, height=500)
+        sidebar.subheader("Collectes", divider="red")
+        panels.table_collections(df_joined, container=sidebar, height=500)
 
         # Details
-        panels.map_locations(df_joined, container=c2, height=250)
-        c2.subheader("Collectes - détails", divider="red")
+        panels.map_locations(df_joined, container=main, height=250)
+
         selected_collection = st.session_state.selected_collection
         collection = df_joined.loc[selected_collection] if selected_collection else pd.Series()
 
-        _collection_details(collection, c2)
+        if collection.empty:
+            c1, c2 = main.columns(2)
+            panels.hist_next_collections(df_joined, container=c1, height=500)
+            panels.calendar_collections(df_joined, container=c2, height=500)
+        else:
+            _collection_details(collection, main)
 
         # --- Event ---
         # Selector
-        c1.subheader("Évènement - liste", divider="red")
-        event_list_container = c1.container(
+        sidebar.subheader("Évènements", divider="red")
+        event_list_container = sidebar.container(
             height=100 if collection.empty else "stretch",
             horizontal_alignment="center" if collection.empty else "left",
             vertical_alignment="center" if collection.empty else "top",
