@@ -37,8 +37,9 @@ def _collection_details(collection: pd.Series, container: DeltaGenerator = st):
     total_days = (collection.start_date.date() - collection.created_at.date()).days
     current_days = (datetime.now().date() - collection.created_at.date()).days
 
-    # st.write(type(res), res)
-    c2.progress(current_days / total_days, f"Débute dans **{total_days - current_days}j**")
+    dt_days = total_days - current_days
+    text = f"dans **{dt_days}j**" if dt_days > 0 else "aujourd'hui"
+    c2.progress(current_days / total_days, f"Débute {text}")
 
     snapshots = services.get_collection_snapshots([st.session_state.selected_collection], only_last=False)
     panels.area_chart_fill_rate(snapshots, container=collection_container)
