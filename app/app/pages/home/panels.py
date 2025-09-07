@@ -1,10 +1,11 @@
+from collections import defaultdict
+from datetime import timedelta
+
 import altair as alt
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
 from streamlit_calendar import calendar
-
-from app.config import Colors
 
 # from app.config import Colors
 
@@ -15,42 +16,47 @@ def collect_types_count(data: pd.DataFrame, container=st, height: int = 500):
         container.metric(t["fr"].capitalize(), count, height=int(height / 3), width="stretch", delta_color="normal")
 
 
-def calendar_collections(data: pd.DataFrame, container=st, **kwargs) -> dict:
+def calendar_collections(data: pd.DataFrame, container=st.container(), **kwargs) -> dict:
     df = data[["taux_remplissage", "city", "post_code", "start_date", "end_date"]].copy()
 
     calendar_options = {
+        "headerToolbar": {"start": "title", "center": "", "end": "today prev,next"},
         "locale": "fr",
-        "editable": True,
-        "selectable": True,
-        "initialView": "dayGridMonth",
-        "showNonCurrentDates": True,
-        "fixedWeekCount": False,
-        "firstDay": 1,
-        "eventBackgroundColor": Colors.Str.lightred,
-        "eventBorderColor": "darkred",
+        # "editable": True,
+        # "selectable": True,
+        "initialView": "timelineMonth",
+        # "showNonCurrentDates": True,
+        # "fixedWeekCount": False,
+        # "firstDay": 1,
+        "eventBackgroundColor": "#ff4b4b",
+        # "eventTextColor": "#ff4b4b",
+        "eventBorderColor": "black",
         **kwargs,
     }
+
     calendar_events = [
         {
-            "title": f"{event.city} ({idx})",
+            "title": f"{event.city}",
             "start": event.start_date.strftime("%Y-%m-%d"),
             "end": event.end_date.strftime("%Y-%m-%d"),
             "id": idx,
         }
         for idx, event in df.iterrows()
     ]
+
     custom_css = """
         .fc {
             font-size: 0.8rem;
-            scrollbar-width: none;
-            scrollbar-color: transparent transparent;
+            scrollbar-width: thin;
+            scrollbar-height: thin;
+            scrollbar-color: rgba(250, 250, 250, 0.4) transparent;
             --fc-border-color: #424242;
             --fc-today-bg-color: #ff4b4b42;
             // --fc-highlight-color: #ff4b4b9b;
-            --fc-button-bg-color: #ff4b4b9b;
+            --fc-button-bg-color: #ff8c8c9b;
         }
         .fc-event-title {
-            // font-weight: 700;
+            font-weight: 700;
         }
         .fc-toolbar-title {
             font-size: 1.3rem;
@@ -131,7 +137,7 @@ def map_locations(data: pd.DataFrame, container=st, **kwargs):
 
     base_lat = 48.17
     base_lng = -2.9
-    zoom = 7.3
+    zoom = 6.7
     pitch = 0
 
     selected_collection = st.session_state.selected_collection
@@ -169,7 +175,7 @@ def map_locations(data: pd.DataFrame, container=st, **kwargs):
     return container.pydeck_chart(deck, **kwargs)
 
 
-def hist_next_collections(data: pd.DataFrame, container=st, height: int = 500, **kwargs):
+def bar_next_collections(data: pd.DataFrame, container=st, height: int = 500, **kwargs):
     df = data[["start_date", "created_at"]].copy()
 
     df["semaine"] = df.start_date.apply(lambda x: x.week)
@@ -184,12 +190,33 @@ def hist_next_collections(data: pd.DataFrame, container=st, height: int = 500, *
 
 
 def area_chart_fill_rate(data: pd.DataFrame, container=st):
+    df = data[["created_at", "nb_places_reservees_st", "nb_places_restantes_st", "nb_places_totales_st"]].copy()
+    df.rename(columns={"created_at": "Date", "nb_places_reservees_st": "Places réservées"}, inplace=True)
+
+    container.markdown("**Inscriptions dans le temps**")
     chart = (
-        alt.Chart(data)
+        alt.Chart(df)
         .mark_area(line={"color": "primary"}, point={"size": 15})
         .encode(
-            alt.X("created_at").axis(format="%d/%m/%y"),
-            alt.Y("nb_places_reservees_st").scale(domain=[0, data.nb_places_totales_st.max()]),
+            alt.X("Date").axis(format="%d/%m/%y"),
+            alt.Y("Places réservées").scale(domain=[0, df.nb_places_totales_st.max()]),
         )
     )
     container.altair_chart(chart)
+
+
+def bar_day_of_week(data: pd.DataFrame, container=st):
+    df = data[["efs_id", "start_date", "end_date"]].copy()
+
+    day_map = {0: "Lundi", 1: "Mardi", 2: "Mercredi", 3: "Jeudi", 4: "Vendredi", 5: "Samedi", 6: "Dimanche"}
+
+    day_dict = defaultdict(int)
+    for _, row in df.iterrows():
+        dt_day = (row.end_date.date() - row.start_date.date()).days
+        for i in range(dt_day + 1):
+            d = row.start_date + timedelta(days=i)
+            day_dict[day_map[d.dayofweek]] += 1
+
+    # TODO: Find how to make bar_chart not sorting by default
+    container.markdown("**Nombre de collectes pour chaque jours de la semaine**")
+    container.bar_chart(day_dict)

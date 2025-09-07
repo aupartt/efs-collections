@@ -22,7 +22,7 @@ def _collection_details(collection: pd.Series, container=st):
         border=False,
     )
 
-    container.subheader("Collectes - détails", divider="red")
+    collection_container.subheader("Collecte - détails", divider="red")
     c1, c2 = collection_container.columns(2)
     c1.markdown(f"##### {collection.full_address}")
     subcontainer = c1.container(
@@ -44,9 +44,18 @@ def _collection_details(collection: pd.Series, container=st):
 
 
 def _global_view(data: pd.DataFrame, container):
-    c1, c2 = container.columns(2)
-    panels.hist_next_collections(data, container=c1, height=500)
-    panels.calendar_collections(data, container=c2, height=500)
+    container.subheader("Informations générale", divider="red")
+
+    # Row 1
+    panels.calendar_collections(data, container=container, height=300)
+
+    # Row 2
+    r2c1, r2c2 = container.columns(2)
+    panels.bar_next_collections(data, container=r2c1, height=300)
+
+    # Row 3
+    r3c1, r3c2 = container.columns(2)
+    panels.bar_day_of_week(data, container=r3c2)
 
 
 def _get_data() -> pd.DataFrame:
