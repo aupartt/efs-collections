@@ -8,65 +8,119 @@ from app.core.database import tables, with_session
 
 @st.cache_data
 @with_session
-def get_locations_data(session: Session) -> pd.DataFrame:
-    # Subquery next collection event (for each locations)
-    cg_subquery = (
-        select(
-            tables.collection_groups.c.id,
-            tables.collection_groups.c.location_id,
-            tables.collection_groups.c.start_date,
-            tables.collection_groups.c.end_date,
-            func.row_number()
-            .over(
-                partition_by=tables.collection_groups.c.location_id,
-                order_by=tables.collection_groups.c.start_date,
-            )
-            .label("row_number"),
-            func.count().over(partition_by=tables.collection_groups.c.location_id).label("n_collections"),
-        ).where(tables.collection_groups.c.end_date >= func.now())
-    ).subquery()
+def get_locations(session: Session, location_ids: pd.Series | list[int] = []) -> pd.DataFrame:
+    query = select(tables.locations)
 
-    next_cg = select(cg_subquery).where(cg_subquery.c.row_number == 1).subquery()
+    if len(location_ids) > 0:
+        query = query.where(tables.locations.c.id.in_(location_ids))
 
-    # Subquery last snapshot (for each NEXT collection groups)
-    snap_subquery = (
-        select(
-            tables.collection_group_snapshots,
-            func.row_number()
-            .over(
-                partition_by=tables.collection_group_snapshots.c.collection_group_id,
-                order_by=tables.collection_group_snapshots.c.created_at.desc(),
-            )
-            .label("row_number"),
-        ).join(next_cg, next_cg.c.id == tables.collection_group_snapshots.c.collection_group_id)
-    ).subquery()
-    latest_snap = select(snap_subquery).where(snap_subquery.c.row_number == 1).subquery()
+    results = session.execute(query).all()
 
-    # Query the locations details with the next collections and the last taken snapshot
-    query = (
-        select(
-            tables.locations.c.id,
-            tables.locations.c.full_address,
-            tables.locations.c.city,
-            tables.locations.c.post_code,
-            tables.locations.c.latitude,
-            tables.locations.c.longitude,
-            tables.locations.c.give_blood,
-            tables.locations.c.give_plasma,
-            tables.locations.c.give_platelet,
-            next_cg.c.id.label("collection_id"),
-            next_cg.c.start_date,
-            next_cg.c.end_date,
-            next_cg.c.n_collections,
-            latest_snap.c.taux_remplissage,
-        )
-        .join(tables.locations, tables.locations.c.id == next_cg.c.location_id)
-        .outerjoin(latest_snap, latest_snap.c.collection_group_id == next_cg.c.id)
-        .where(next_cg.c.end_date >= func.current_date(), func.extract("day", next_cg.c.start_date - func.now()) <= 60)
+    df = pd.DataFrame(results).set_index("id")
+
+    # Remove useless columns
+    df.drop(
+        columns=[
+            "address1",
+            "address2",
+            "horaires",
+            "infos",
+            "metro",
+            "bus",
+            "tram",
+            "parking",
+            "debut_infos",
+            "fin_infos",
+            "ville",
+            "phone",
+            "group_code",
+        ],
+        inplace=True,
     )
 
-    query = query.order_by(next_cg.c.start_date)
-    query = query.limit(st.session_state["limit"])
+    return df
 
-    result = session.execute(query).all()
-    return pd.DataFrame(result)
+
+# @st.cache_data
+@with_session
+def get_collections(session: Session, is_active: bool = True) -> pd.DataFrame:
+    query = select(tables.collection_groups)
+
+    if is_active:
+        query = query.where(tables.collection_groups.c.end_date >= func.now())
+
+    results = session.execute(query).all()
+    return pd.DataFrame(results).set_index("id")
+
+
+# @st.cache_data
+@with_session
+def get_collection_snapshots(
+    session: Session, collection_ids: pd.Series | list[int], only_last: bool = True
+) -> pd.DataFrame:
+    query = select(tables.collection_group_snapshots).where(
+        tables.collection_group_snapshots.c.collection_group_id.in_(collection_ids)
+    )
+
+    if only_last:
+        snap_subquery = (
+            select(
+                tables.collection_group_snapshots,
+                func.row_number()
+                .over(
+                    partition_by=tables.collection_group_snapshots.c.collection_group_id,
+                    order_by=tables.collection_group_snapshots.c.created_at.desc(),
+                )
+                .label("row_number"),
+            )
+        ).subquery()
+        query = query.join(snap_subquery, snap_subquery.c.id == tables.collection_group_snapshots.c.id).where(
+            snap_subquery.c.row_number == 1
+        )
+
+    query = query.order_by(tables.collection_group_snapshots.c.created_at.desc())
+
+    results = session.execute(query).all()
+
+    df = pd.DataFrame(results)
+    if only_last:
+        df = df.set_index("collection_group_id")
+    else:
+        df = df.set_index("id")
+    return df
+
+
+@st.cache_data
+@with_session
+def get_collection_events(session: Session, collection_ids: pd.Series | list[int]) -> pd.DataFrame:
+    query = select(tables.collection_events).where(
+        tables.collection_events.c.collection_group_id.in_(collection_ids),
+        tables.collection_events.c.date >= func.now(),
+    )
+    results = session.execute(query).all()
+    return pd.DataFrame(results).set_index("id")
+
+
+@st.cache_data
+@with_session
+def get_event_schedules(session: Session, event_ids: pd.Series | list[int], only_last: bool = True) -> pd.DataFrame:
+    query = select(tables.schedules).where(tables.schedules.c.event_id.in_(event_ids))
+
+    if only_last:
+        sch_subquery = (
+            select(
+                tables.schedules,
+                func.row_number()
+                .over(partition_by=tables.schedules.c.event_id, order_by=tables.schedules.c.created_at.desc())
+                .label("row_number"),
+            )
+        ).subquery()
+
+        query = query.join(sch_subquery, sch_subquery.c.id == tables.schedules.c.id).where(
+            sch_subquery.c.row_number == 1
+        )
+
+    query = query.order_by(tables.schedules.c.created_at.desc())
+
+    results = session.execute(query).all()
+    return pd.DataFrame(results).set_index("id")
