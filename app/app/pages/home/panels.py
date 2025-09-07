@@ -5,18 +5,19 @@ import altair as alt
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 from streamlit_calendar import calendar
 
 # from app.config import Colors
 
 
-def collect_types_count(data: pd.DataFrame, container=st, height: int = 500):
+def collect_types_count(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
     for t, c in zip(st.session_state.collect_types.values(), st.columns(3)):
         count = data.loc[data[f"give_{t['en']}"], "n_collections"].sum()
         container.metric(t["fr"].capitalize(), count, height=int(height / 3), width="stretch", delta_color="normal")
 
 
-def calendar_collections(data: pd.DataFrame, container=st.container(), **kwargs) -> dict:
+def calendar_collections(data: pd.DataFrame, container: DeltaGenerator = st.container(), **kwargs) -> dict:
     df = data[["taux_remplissage", "city", "post_code", "start_date", "end_date"]].copy()
 
     calendar_options = {
@@ -77,7 +78,7 @@ def calendar_collections(data: pd.DataFrame, container=st.container(), **kwargs)
             st.write(st.session_state.selected_collection)
 
 
-def table_collections(data: pd.DataFrame, container=st, **kwargs) -> list[int]:
+def table_collections(data: pd.DataFrame, container: DeltaGenerator = st, **kwargs) -> list[int]:
     df = data[["taux_remplissage", "city", "post_code", "start_date", "end_date"]].copy()
 
     df.taux_remplissage = df.taux_remplissage / 100
@@ -132,7 +133,7 @@ def _create_layer(data: pd.DataFrame, collect_type: str):
     )
 
 
-def map_locations(data: pd.DataFrame, container=st, **kwargs):
+def map_locations(data: pd.DataFrame, container: DeltaGenerator = st, **kwargs):
     df = data.copy()
 
     base_lat = 48.17
@@ -175,7 +176,7 @@ def map_locations(data: pd.DataFrame, container=st, **kwargs):
     return container.pydeck_chart(deck, **kwargs)
 
 
-def bar_next_collections(data: pd.DataFrame, container=st, height: int = 500, **kwargs):
+def bar_next_collections(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500, **kwargs):
     df = data[["start_date", "created_at"]].copy()
 
     df["semaine"] = df.start_date.apply(lambda x: x.week)
@@ -189,7 +190,7 @@ def bar_next_collections(data: pd.DataFrame, container=st, height: int = 500, **
     subcontainer.bar_chart(df, x="Semaine", y="Collectes", height=min(500, height - 45), **kwargs)
 
 
-def area_chart_fill_rate(data: pd.DataFrame, container=st):
+def area_chart_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st):
     df = data[["created_at", "nb_places_reservees_st", "nb_places_restantes_st", "nb_places_totales_st"]].copy()
     df.rename(columns={"created_at": "Date", "nb_places_reservees_st": "Places réservées"}, inplace=True)
 
@@ -205,7 +206,7 @@ def area_chart_fill_rate(data: pd.DataFrame, container=st):
     container.altair_chart(chart)
 
 
-def bar_day_of_week(data: pd.DataFrame, container=st):
+def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st):
     df = data[["efs_id", "start_date", "end_date"]].copy()
 
     day_map = {0: "Lundi", 1: "Mardi", 2: "Mercredi", 3: "Jeudi", 4: "Vendredi", 5: "Samedi", 6: "Dimanche"}
@@ -220,3 +221,20 @@ def bar_day_of_week(data: pd.DataFrame, container=st):
     # TODO: Find how to make bar_chart not sorting by default
     container.markdown("**Nombre de collectes pour chaque jours de la semaine**")
     container.bar_chart(day_dict)
+
+
+def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st):
+    df = data[["start_date", "end_date", "taux_remplissage", "nb_places_totales_st"]].copy()
+
+    mean_duration_days = df.end_date.dt.date - df.start_date.dt.date + timedelta(days=1)
+    mean_duration_days = mean_duration_days.apply(lambda x: x.days)
+
+    # metric mean
+    # container.markdown("**Moyennes**")
+    _container = container.container(
+        width="stretch", height="stretch", vertical_alignment="center", horizontal_alignment="center"
+    )
+    subcontainer = _container.container(width=600, height="content", horizontal=True)
+    subcontainer.metric("Durée moyenne", f"{round(mean_duration_days.mean(), 2)} jours")
+    subcontainer.metric("Places moyenne", f"{round(df.nb_places_totales_st.mean())} places")
+    subcontainer.metric("Taux remplissage moyen", f"{round(df.taux_remplissage.mean())}%")

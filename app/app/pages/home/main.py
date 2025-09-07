@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 
 import app.pages.home.panels as panels
 import app.pages.home.services as services
@@ -14,7 +15,7 @@ def display_table(data: list, **kwargs):
         return result.selection.rows
 
 
-def _collection_details(collection: pd.Series, container=st):
+def _collection_details(collection: pd.Series, container: DeltaGenerator = st):
     collection_container = container.container(
         height=250 if collection.empty else "stretch",
         horizontal_alignment="center" if collection.empty else "left",
@@ -50,11 +51,12 @@ def _global_view(data: pd.DataFrame, container):
     panels.calendar_collections(data, container=container, height=300)
 
     # Row 2
-    r2c1, r2c2 = container.columns(2)
+    r2c1, r2c2 = container.columns([3, 2])
     panels.bar_next_collections(data, container=r2c1, height=300)
+    panels.mean_slots_stats(data, container=r2c2)
 
     # Row 3
-    r3c1, r3c2 = container.columns(2)
+    r3c1, r3c2 = container.columns([3, 2])
     panels.bar_day_of_week(data, container=r3c2)
 
 
