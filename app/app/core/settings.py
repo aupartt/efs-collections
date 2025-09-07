@@ -21,16 +21,5 @@ class Settings(BaseSettings):
     def POSTGRES_URL(self) -> str:
         return f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    # STREAMLIT
-    ST_SESSION_STATE: dict = {
-        "limit": None,
-        "selected_locations": [],
-        "collect_types": {
-            "blood": {"fr": "sang", "en": "blood", "short": "st"},
-            "plasma": {"fr": "plasma", "en": "plasma", "short": "pla"},
-            "platelet": {"fr": "plaquette", "en": "platelet", "short": "cpa"},
-        },
-    }
-
 
 settings = Settings()
