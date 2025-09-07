@@ -1,13 +1,12 @@
 import streamlit as st
 
-from app.core.settings import settings
+from app.config import ST_SESSION_STATE
 from app.pages.home import display_page
 
 
 def init():
-    st.set_page_config(page_title="Home", page_icon="🌍", layout="wide")
     if len(st.session_state.keys()) == 0:
-        st.session_state.update(settings.ST_SESSION_STATE)
+        st.session_state.update(ST_SESSION_STATE)
 
 
 def main():
