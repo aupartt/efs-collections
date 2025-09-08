@@ -7,8 +7,7 @@ requires-python = ">=3.12"
 
 dependencies = [
     "aio-pika>=9.5.5",
-    "beautifulsoup4>=4.13.5",
-    "crawlee[playwright]>=0.6.12",
+    "crawlee[beautifulsoup]>=0.6.12",
 ]
 
 [dependency-groups]
