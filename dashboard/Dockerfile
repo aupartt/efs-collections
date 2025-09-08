@@ -23,7 +23,6 @@ ENV OMP_NUM_THREADS=1
 
 # Copy the ROOT pyproject.toml and uv.lock (workspace configuration)
 COPY pyproject.toml uv.lock ./
-COPY ./dashboard/pyproject.toml ./dashboard/
 
 # Sync dependencies using the workspace configuration
 RUN --mount=type=cache,target=/root/.cache/uv \
