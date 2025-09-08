@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import altair as alt
 import pandas as pd
@@ -8,10 +8,10 @@ import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 from streamlit_calendar import calendar
 
-# from app.config import Colors
+from app.config import Colors
 
 
-def collect_types_count(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
+def count_collect_types(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
     for t, c in zip(st.session_state.collect_types.values(), st.columns(3)):
         count = data.loc[data[f"give_{t['en']}"], "n_collections"].sum()
         container.metric(t["fr"].capitalize(), count, height=int(height / 3), width="stretch", delta_color="normal")
@@ -23,8 +23,8 @@ def calendar_collections(data: pd.DataFrame, container: DeltaGenerator = st.cont
     calendar_options = {
         "headerToolbar": {"start": "title", "center": "", "end": "today prev,next"},
         "locale": "fr",
-        # "editable": True,
-        # "selectable": True,
+        "editable": True,
+        "selectable": True,
         "initialView": "timelineMonth",
         # "showNonCurrentDates": True,
         # "fixedWeekCount": False,
@@ -78,7 +78,7 @@ def calendar_collections(data: pd.DataFrame, container: DeltaGenerator = st.cont
             st.write(st.session_state.selected_collection)
 
 
-def table_collections(data: pd.DataFrame, container: DeltaGenerator = st, **kwargs) -> list[int]:
+def dataframe_collections(data: pd.DataFrame, container: DeltaGenerator = st, **kwargs) -> list[int]:
     df = data[["taux_remplissage", "city", "post_code", "start_date", "end_date"]].copy()
 
     df.taux_remplissage = df.taux_remplissage / 100
@@ -111,6 +111,43 @@ def table_collections(data: pd.DataFrame, container: DeltaGenerator = st, **kwar
     st.session_state.selected_collection = df.iloc[selected.selection.rows[0]].name
 
 
+def dataframe_events(data: pd.DataFrame, container: DeltaGenerator = st):
+    df = data.drop(columns=["lp_code", "created_at", "collection_group_id"])
+
+    def _filter_date(serie: pd.Series, fn: callable):
+        row = serie.values
+        if row[0] is None:
+            return row[1]
+        elif row[1] is None:
+            return row[0]
+        return fn([row[0], row[1]])
+
+    df["start_time"] = df[["morning_start_time", "afternoon_start_time"]].apply(_filter_date, fn=min, axis=1)
+    df["end_time"] = df[["morning_end_time", "afternoon_end_time"]].apply(_filter_date, fn=max, axis=1)
+    df = df.drop(columns=df.filter(regex=r"afternoon_|morning_").columns)
+
+    column_config = {
+        "date": st.column_config.DatetimeColumn("Date", format="DD/MM/YY", width="small"),
+        "start_time": st.column_config.DatetimeColumn("Débute à", format="HH:mm", width="small"),
+        "end_time": st.column_config.DatetimeColumn("Fini à", format="HH:mm", width="small"),
+    }
+
+    selected = container.dataframe(
+        df,
+        width="stretch",
+        on_select="rerun",
+        selection_mode="single-row",
+        column_config=column_config,
+        hide_index=True,
+    )
+
+    if len(selected.selection.rows) == 0:
+        st.session_state.selected_event = None
+        return
+
+    st.session_state.selected_event = df.iloc[selected.selection.rows[0]].name
+
+
 def _create_layer(data: pd.DataFrame, collect_type: str):
     df = data[data[f"give_{collect_type}"]].to_dict("records")
     return pdk.Layer(
@@ -119,7 +156,7 @@ def _create_layer(data: pd.DataFrame, collect_type: str):
         get_icon="icon_data",
         get_size=20,
         get_position=["longitude", "latitude"],
-        # get_color=Colors.List.lightred,
+        # get_color=Colors.List.red,
         get_radius=100,
         elevation_scale=10,
         elevation_range=[200, 1000],
@@ -198,12 +235,13 @@ def bar_next_collections(data: pd.DataFrame, container: DeltaGenerator = st, hei
         y="created_at",
         x_label="Semaine",
         y_label="Collectes",
+        color=Colors.Str.lightred,
         height=min(500, height - 45),
         **kwargs,
     )
 
 
-def area_chart_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st):
+def area_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st):
     df = data[["created_at", "nb_places_reservees_st", "nb_places_restantes_st", "nb_places_totales_st"]].copy()
     df.rename(columns={"created_at": "Date", "nb_places_reservees_st": "Places réservées"}, inplace=True)
 
@@ -219,7 +257,7 @@ def area_chart_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st):
     container.altair_chart(chart)
 
 
-def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st):
+def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
     df = data[["efs_id", "start_date", "end_date"]].copy()
 
     # day_map = {0: "Lundi", 1: "Mardi", 2: "Mercredi", 3: "Jeudi", 4: "Vendredi", 5: "Samedi", 6: "Dimanche"}
@@ -234,7 +272,13 @@ def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st):
 
     # TODO: Find how to make bar_chart not sorting by default
     container.markdown("**Nombre de collectes pour chaque jours de la semaine**")
-    container.bar_chart(day_dict, x_label="Jour de la semaine", y_label="Nombre totale de collectes")
+    container.bar_chart(
+        day_dict,
+        x_label="Jour de la semaine",
+        y_label="Nombre totale de collectes",
+        color=Colors.Str.darkred,
+        height=min(500, height - 45),
+    )
 
 
 def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st):
@@ -249,9 +293,31 @@ def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st):
         width="stretch",
         height="stretch",
         vertical_alignment="center",
-        horizontal_alignment="center",
+        horizontal_alignment="left",
     )
-    subcontainer = _container.container(width=600, height="content", horizontal=True)
-    subcontainer.metric("Durée moyenne", f"{round(mean_duration_days.mean(), 2)} jours")
-    subcontainer.metric("Places moyenne", f"{round(df.nb_places_totales_st.mean())} places")
-    subcontainer.metric("Taux remplissage moyen", f"{round(df.taux_remplissage.mean())}%")
+    subcontainer = _container.container(width="stretch", height="content", horizontal=True)
+    subcontainer.metric("Durée d'une collecte", f"{round(mean_duration_days.mean(), 2)} jours")
+    subcontainer.metric("Nombre de places", f"{round(df.nb_places_totales_st.mean())} places")
+    subcontainer.metric("Taux de remplissage", f"{round(df.taux_remplissage.mean())}%")
+
+    fill_rate_next_week = df.loc[df.end_date <= (datetime.now() + timedelta(days=7)), "taux_remplissage"].mean()
+    subcontainer.metric("Taux de remplissage (7j)", f"{round(fill_rate_next_week)}%")
+
+
+def progress_start_in_days(collection: pd.DataFrame, container: DeltaGenerator = st):
+    total_days = (collection.start_date.date() - collection.created_at.date()).days
+    current_days = (datetime.now().date() - collection.created_at.date()).days
+
+    dt_days = total_days - current_days
+    text = f"dans **{dt_days}j**" if dt_days > 0 else "aujourd'hui"
+    container.markdown(
+        f"""
+    <style>
+    .stProgress > div:nth-child(2) > div > div > div {{
+        background-color: {Colors.Str.lightred};
+    }}
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )
+    container.progress(current_days / total_days, f"Débute {text}")
