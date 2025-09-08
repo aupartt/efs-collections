@@ -3,10 +3,17 @@ from typing import TypedDict
 
 class Colors:
     class List:
-        lightred = [255, 75, 75, 255]
+        primary = [255, 75, 75, 255]
+        secondary = [255, 165, 75, 255]
+        tertiary = [255, 75, 165, 255]
 
     class Str:
-        lightred = "#ff4b4b"
+        primary = "#FF4B4B"
+        secondary = "#FFA54B"
+        tertiary = "#FF4BA5"
+        lightred = "#ff9898"
+        red = "#FF4B4B"
+        darkred = "#d23939"
 
 
 class CollectType(TypedDict):
