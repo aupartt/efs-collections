@@ -1,5 +1,4 @@
 import streamlit as st
-
 from app.config import ST_SESSION_STATE
 from app.pages.home import display_page
 
