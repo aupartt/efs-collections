@@ -31,4 +31,4 @@ ENV PYTHONUNBUFFERED=1
 
 # Use the installed cli.py as the entrypoint
 # The entrypoint should now be to the main application's CLI module, which is inside the 'collector' folder
-ENTRYPOINT ["python", "-u", "-m", "streamlit", "run", "main.py"]
+CMD ["python", "-u", "-m", "streamlit", "run", "main.py"]
