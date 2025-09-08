@@ -82,20 +82,16 @@ def table_collections(data: pd.DataFrame, container: DeltaGenerator = st, **kwar
     df = data[["taux_remplissage", "city", "post_code", "start_date", "end_date"]].copy()
 
     df.taux_remplissage = df.taux_remplissage / 100
+    df.post_code = df.post_code.str.slice(0, 2)
+
     column_config = {
         "taux_remplissage": st.column_config.ProgressColumn(
             "Taux de Remplissage", min_value=0, max_value=1
         ),  # st.column_config.NumberColumn("Taux de Remplissage", format="percent", width="small"),
-        "city": st.column_config.TextColumn("Ville", width="medium"),
-        "post_code": st.column_config.TextColumn("CP", width="small"),
-        "start_date": st.column_config.DatetimeColumn("Débute le", format="DD/MM/YYYY", width="small"),
-        "end_date": st.column_config.DatetimeColumn("Fini le", format="DD/MM/YYYY", width="small"),
-        "n_collections": st.column_config.NumberColumn("Nombre de collectes", format="accounting", width="small"),
-        # "id": st.column_config.NumberColumn(
-        #     "Collecte ID",
-        #     width="small",
-        # ),
-        "collection_id": st.column_config.NumberColumn("Collecte ID", width="small"),
+        "city": st.column_config.TextColumn("Ville"),
+        "post_code": st.column_config.TextColumn("CP", width=30),
+        "start_date": st.column_config.DatetimeColumn("Débute le", format="DD/MM/YY", width="small"),
+        "end_date": st.column_config.DatetimeColumn("Fini le", format="DD/MM/YY", width="small"),
     }
 
     selected = container.dataframe(
@@ -104,6 +100,7 @@ def table_collections(data: pd.DataFrame, container: DeltaGenerator = st, **kwar
         on_select="rerun",
         selection_mode="single-row",
         column_config=column_config,
+        hide_index=True,
         **kwargs,
     )
 
