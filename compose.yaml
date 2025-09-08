@@ -59,6 +59,7 @@ services:
     build:
       context: ./dashboard
       dockerfile: ./Dockerfile
+    image: dashboard:latest
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-dev}
       POSTGRES_USER: ${POSTGRES_GRAFANA_USER}
