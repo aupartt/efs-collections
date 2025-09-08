@@ -78,7 +78,7 @@ def get_collection_snapshots(
             snap_subquery.c.row_number == 1
         )
 
-    query = query.order_by(tables.collection_group_snapshots.c.created_at.desc())
+    query = query.order_by(tables.collection_group_snapshots.c.created_at)
 
     results = session.execute(query).all()
 
