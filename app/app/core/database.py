@@ -27,6 +27,8 @@ def with_session(fn):
         with SessionLocal() as session:
             try:
                 return fn(session, *args, **kwargs)
+            except Exception as e:
+                print(f"Something went wrong with PostGres: {str(e)}")
             finally:
                 session.close()
 
