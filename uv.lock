@@ -5,9 +5,9 @@ requires-python = ">=3.12"
 [manifest]
 members = [
     "api-carto-client",
-    "dashboard",
     "collector",
     "crawler",
+    "dashboard",
 ]
 
 [manifest.dependency-groups]
@@ -245,33 +245,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/63/7d/355f0d8ac50d03e0877a071deacecb3297d59a52fd2ecf1fab6c9d9474e9/apify_fingerprint_datapoints-0.1.0.tar.gz", hash = "sha256:b05ecded1892962e32196cc7d1c4bae8646d352de4fed7bcbbc38e9c6bcd4136", size = 560487, upload-time = "2025-08-28T13:28:25.847Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fa/06/26a4a4c08d080a3cae00ff58802eedb3e59ac845d0eedcaa5e0d401f0ad1/apify_fingerprint_datapoints-0.1.0-py3-none-any.whl", hash = "sha256:6d2e7d26374d61e82a1edf418f2d352e7138f82f19c405282b4834ab3f01077f", size = 313520, upload-time = "2025-08-28T13:28:24.268Z" },
-]
-
-[[package]]
-name = "app"
-version = "0.1.0"
-source = { virtual = "dashboard" }
-dependencies = [
-    { name = "altair", extra = ["all"] },
-    { name = "psycopg" },
-    { name = "psycopg-binary" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "sqlalchemy" },
-    { name = "streamlit" },
-    { name = "streamlit-calendar" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "altair", extras = ["all"], specifier = ">=5.5.0" },
-    { name = "psycopg", specifier = ">=3.2.9" },
-    { name = "psycopg-binary", specifier = ">=3.2.9" },
-    { name = "pydantic", specifier = ">=2.11.7" },
-    { name = "pydantic-settings", specifier = ">=2.6.0" },
-    { name = "sqlalchemy", specifier = ">=2.0.43" },
-    { name = "streamlit", specifier = ">=1.49.1" },
-    { name = "streamlit-calendar", specifier = ">=1.4.0" },
 ]
 
 [[package]]
@@ -773,6 +746,33 @@ dev = [
     { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "pytest-mock", specifier = ">=3.14.1" },
     { name = "ruff", specifier = ">=0.12.4" },
+]
+
+[[package]]
+name = "dashboard"
+version = "0.1.0"
+source = { virtual = "dashboard" }
+dependencies = [
+    { name = "altair", extra = ["all"] },
+    { name = "psycopg" },
+    { name = "psycopg-binary" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "sqlalchemy" },
+    { name = "streamlit" },
+    { name = "streamlit-calendar" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "altair", extras = ["all"], specifier = ">=5.5.0" },
+    { name = "psycopg", specifier = ">=3.2.9" },
+    { name = "psycopg-binary", specifier = ">=3.2.9" },
+    { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "pydantic-settings", specifier = ">=2.6.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.43" },
+    { name = "streamlit", specifier = ">=1.49.1" },
+    { name = "streamlit-calendar", specifier = ">=1.4.0" },
 ]
 
 [[package]]
