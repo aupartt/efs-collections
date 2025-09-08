@@ -160,7 +160,12 @@ def map_locations(data: pd.DataFrame, container: DeltaGenerator = st, **kwargs):
     layers = [_create_layer(df, collect_type) for collect_type in ["blood", "plasma", "platelet"]]
 
     # View state
-    view_state = pdk.ViewState(latitude=base_lat, longitude=base_lng, zoom=zoom, pitch=pitch)
+    view_state = pdk.ViewState(
+        latitude=base_lat,
+        longitude=base_lng,
+        zoom=zoom,
+        pitch=pitch,
+    )
 
     # Deck with tooltip
     deck = pdk.Deck(
@@ -180,11 +185,22 @@ def bar_next_collections(data: pd.DataFrame, container: DeltaGenerator = st, hei
     df.semaine = df.semaine - df.semaine.min()
 
     df = df.groupby("semaine").aggregate({"semaine": "mean", "created_at": "count"})
-    df.rename(columns={"created_at": "Collectes", "semaine": "Semaine"}, inplace=True)
 
-    subcontainer = container.container(height=height, vertical_alignment="distribute", border=False)
+    subcontainer = container.container(
+        height=height,
+        vertical_alignment="distribute",
+        border=False,
+    )
     subcontainer.markdown("**Collectes les prochaines semaines**")
-    subcontainer.bar_chart(df, x="Semaine", y="Collectes", height=min(500, height - 45), **kwargs)
+    subcontainer.bar_chart(
+        df,
+        x="semaine",
+        y="created_at",
+        x_label="Semaine",
+        y_label="Collectes",
+        height=min(500, height - 45),
+        **kwargs,
+    )
 
 
 def area_chart_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st):
@@ -206,18 +222,19 @@ def area_chart_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st):
 def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st):
     df = data[["efs_id", "start_date", "end_date"]].copy()
 
-    day_map = {0: "Lundi", 1: "Mardi", 2: "Mercredi", 3: "Jeudi", 4: "Vendredi", 5: "Samedi", 6: "Dimanche"}
+    # day_map = {0: "Lundi", 1: "Mardi", 2: "Mercredi", 3: "Jeudi", 4: "Vendredi", 5: "Samedi", 6: "Dimanche"}
 
     day_dict = defaultdict(int)
     for _, row in df.iterrows():
         dt_day = (row.end_date.date() - row.start_date.date()).days
         for i in range(dt_day + 1):
             d = row.start_date + timedelta(days=i)
-            day_dict[day_map[d.dayofweek]] += 1
+            # day_dict[day_map[d.dayofweek]] += 1
+            day_dict[d.dayofweek] += 1
 
     # TODO: Find how to make bar_chart not sorting by default
     container.markdown("**Nombre de collectes pour chaque jours de la semaine**")
-    container.bar_chart(day_dict)
+    container.bar_chart(day_dict, x_label="Jour de la semaine", y_label="Nombre totale de collectes")
 
 
 def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st):
@@ -229,7 +246,10 @@ def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st):
     # metric mean
     # container.markdown("**Moyennes**")
     _container = container.container(
-        width="stretch", height="stretch", vertical_alignment="center", horizontal_alignment="center"
+        width="stretch",
+        height="stretch",
+        vertical_alignment="center",
+        horizontal_alignment="center",
     )
     subcontainer = _container.container(width=600, height="content", horizontal=True)
     subcontainer.metric("Durée moyenne", f"{round(mean_duration_days.mean(), 2)} jours")
