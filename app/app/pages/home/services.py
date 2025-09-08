@@ -120,7 +120,7 @@ def get_event_schedules(session: Session, event_ids: pd.Series | list[int], only
             sch_subquery.c.row_number == 1
         )
 
-    query = query.order_by(tables.schedules.c.created_at.desc())
+    query = query.order_by(tables.schedules.c.created_at)
 
     results = session.execute(query).all()
     return pd.DataFrame(results).set_index("id")
