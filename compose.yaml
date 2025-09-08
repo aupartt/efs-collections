@@ -28,7 +28,9 @@ services:
       - POSTGRES_USER=${POSTGRES_GRAFANA_USER}
       - POSTGRES_PASSWORD=${POSTGRES_GRAFANA_PASSWORD}
     volumes:
-      - ./conf/grafana/:/etc/grafana/
+      # - ./conf/grafana/:/etc/grafana/
+      - ./conf/grafana/dashboards:/etc/grafana/dashboards
+      - ./conf/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
       - grafana-storage:/var/lib/grafana
     networks:
       - app_network
