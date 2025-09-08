@@ -2,8 +2,8 @@ import pandas as pd
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
-import app.pages.home.panels as panels
-import app.pages.home.services as services
+import dashboard.pages.home.panels as panels
+import dashboard.pages.home.services as services
 
 
 def display_view(collection: pd.Series, container: DeltaGenerator = st):

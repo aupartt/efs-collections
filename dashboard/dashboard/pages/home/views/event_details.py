@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
-import app.pages.home.services as services
+import dashboard.pages.home.services as services
 
 
 def display_view(container: DeltaGenerator):

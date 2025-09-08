@@ -1,9 +1,9 @@
 import pandas as pd
 import streamlit as st
 
-import app.pages.home.panels as panels
-import app.pages.home.services as services
-from app.pages.home.views import display_collection_details, display_event_details, display_sidebar
+import dashboard.pages.home.panels as panels
+import dashboard.pages.home.services as services
+from dashboard.pages.home.views import display_collection_details, display_event_details, display_sidebar
 
 
 def _get_data() -> pd.DataFrame:

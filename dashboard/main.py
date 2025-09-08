@@ -1,6 +1,7 @@
 import streamlit as st
-from app.config import ST_SESSION_STATE
-from app.pages.home import display_page
+
+from dashboard.config import ST_SESSION_STATE
+from dashboard.pages.home import display_page
 
 
 def init():

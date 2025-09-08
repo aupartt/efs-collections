@@ -8,7 +8,7 @@ import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 from streamlit_calendar import calendar
 
-from app.config import Colors
+from dashboard.config import Colors
 
 
 def count_collect_types(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
