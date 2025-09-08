@@ -1,6 +1,5 @@
 [server]
-headless=True
-serverAddress = “0.0.0.0”
+headless = true
 
 [theme]
 base = "dark"
