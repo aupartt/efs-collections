@@ -30,7 +30,7 @@ services:
     volumes:
       # - ./conf/grafana/:/etc/grafana/
       - ./conf/grafana/dashboards:/etc/grafana/dashboards
-      - ./conf/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./conf/grafana/provisioning/:/etc/grafana/provisioning/
       - grafana-storage:/var/lib/grafana
     networks:
       - app_network
