@@ -167,28 +167,28 @@ def _create_layer(data: pd.DataFrame, collect_type: str):
     )
 
 
-def map_locations(data: pd.DataFrame, container: DeltaGenerator = st, **kwargs):
+def map_locations(data: pd.Series | pd.DataFrame, container: DeltaGenerator = st, **kwargs):
     df = data.copy()
 
     base_lat = 48.17
     base_lng = -2.9
     zoom = 6.7
     pitch = 0
-
-    selected_collection = st.session_state.selected_collection
-    if selected_collection:
-        df = df.loc[[selected_collection]]
-        base_lat = df.latitude.mean()
-        base_lng = df.longitude.mean()
-        zoom = 13
-        pitch = 0
-
     icon_data = {
         "url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Blood_drop_plain.svg",
         "width": 150,
         "height": 150,
         "anchorY": 150,
     }
+
+    # selected_collection = st.session_state.selected_collection
+    if isinstance(df, pd.Series):
+        df = pd.DataFrame([df])
+        base_lat = df.latitude.mean()
+        base_lng = df.longitude.mean()
+        zoom = 13
+        pitch = 0
+
     df["icon_data"] = None
     df.icon_data = df.icon_data.apply(lambda x: icon_data)
     df.start_date = df.start_date.dt.strftime("%d/%m/%Y")
