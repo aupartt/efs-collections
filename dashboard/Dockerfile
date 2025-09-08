@@ -1,20 +1,29 @@
-# Start with a suitable base image
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-# Set the working directory for the entire project
-WORKDIR /app
+# Install build dependencies (keep these if needed for other packages)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    gfortran \
+    libopenblas-dev \
+    liblapack-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the entire monorepo structure
-# This includes all pyproject.toml and uv.lock files
+WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
-# Set environment variables for UV
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
+# Set piwheels as an extra index for package resolution
+ENV UV_EXTRA_INDEX_URL=https://www.piwheels.org/simple
 
-# Use a single UV command to sync all workspace members and their dependencies
-# Use --workspace to indicate UV should treat this as a monorepo
-# --no-dev to avoid installing dev dependencies in the final image
+# Add environment variables for ARM optimization
+ENV OPENBLAS_CORETYPE=ARMV8
+ENV OPENBLAS_NUM_THREADS=1
+ENV OMP_NUM_THREADS=1
+
+# Sync dependencies using piwheels
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
@@ -22,11 +31,8 @@ COPY ./app ./app
 COPY ./main.py ./
 COPY ./.streamlit/ ./.streamlit/
 
-# Set the PATH and PYTHONPATH for the application
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/collector"
 ENV PYTHONUNBUFFERED=1
 
-# Use the installed cli.py as the entrypoint
-# The entrypoint should now be to the main application's CLI module, which is inside the 'collector' folder
 CMD ["streamlit", "run", "main.py"]
