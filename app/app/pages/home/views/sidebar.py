@@ -7,8 +7,6 @@ import app.pages.home.services as services
 
 
 def display_view(data: pd.DataFrame, container: DeltaGenerator):
-    container.title("Futures collectes mobiles (EFS) en Bretagne.")
-
     container.subheader("Collectes", divider="red")
     panels.dataframe_collections(data, container=container, height=500)
 

@@ -20,7 +20,7 @@ def display_view(collection: pd.Series, container: DeltaGenerator = st):
         collection_container.text("aucune collecte séléctionné.")
         return
 
-    c1, c2 = collection_container.columns(2)
+    c1, c2 = collection_container.columns([1, 2], gap="large")
     c1.markdown(f"##### {collection.full_address}")
     subcontainer = c1.container(
         vertical_alignment="center",
@@ -29,7 +29,11 @@ def display_view(collection: pd.Series, container: DeltaGenerator = st):
     )
     subcontainer.text(f"Suivis depuis le {collection.created_at.strftime('%d/%m/%Y')}")
     subcontainer.link_button("Lien collecte", url=f"http://{collection.url_blood}", icon=":material/open_in_new:")
-    panels.progress_start_in_days(collection, container=c2)
+    panels.progress_start_in_days(collection, container=c1)
+    panels.map_locations(collection, container=c2, height=250)
 
-    snapshots = services.get_collection_snapshots([st.session_state.selected_collection], only_last=False)
-    panels.area_fill_rate(snapshots, container=collection_container)
+    c1, c2 = collection_container.columns[1, 5]
+    records = services.get_collection_snapshots([st.session_state.selected_collection], only_last=False)
+    # last_record = records[0]
+
+    panels.area_fill_rate(records, container=c2)

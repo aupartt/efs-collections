@@ -31,28 +31,22 @@ def display_page():
         # Sidebar
         display_sidebar(df, container=sidebar)
 
-        # --- Collection ---
-        # Selector
-
-        # Details
-        panels.map_locations(df, container=main, height=250)
+        main.title("Collectes mobiles (EFS) en Bretagne.")
 
         selected_collection = st.session_state.selected_collection
         collection = df.loc[selected_collection] if selected_collection else pd.Series()
 
-        # Row 1
+        # Global informations
         # panels.calendar_collections(data, container=container, height=300)
         main.subheader("Informations générale", divider="red")
-
         # Row 2
-        # r2c1, r2c2 = container.columns([3, 2])
         panels.mean_slots_stats(df, container=main)
-
         # Row 3
         r3c1, r3c2 = main.columns([3, 2])
         panels.bar_next_collections(df, container=r3c1, height=300)
         panels.bar_day_of_week(df, container=r3c2, height=300)
 
+        # Views
         display_collection_details(collection, container=main)
         display_event_details(container=main)
 
