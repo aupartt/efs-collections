@@ -12,17 +12,15 @@ COPY pyproject.toml uv.lock ./
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 
-# Generate lock file
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
-
 # Use a single UV command to sync all workspace members and their dependencies
 # Use --workspace to indicate UV should treat this as a monorepo
 # --no-dev to avoid installing dev dependencies in the final image
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
-COPY . .
+COPY ./app ./app
+COPY ./main.py ./
+COPY ./.streamlit/ ./.streamlit/
 
 # Set the PATH and PYTHONPATH for the application
 ENV PATH="/app/.venv/bin:$PATH"
@@ -31,4 +29,4 @@ ENV PYTHONUNBUFFERED=1
 
 # Use the installed cli.py as the entrypoint
 # The entrypoint should now be to the main application's CLI module, which is inside the 'collector' folder
-CMD ["python", "-u", "-m", "streamlit", "run", "main.py"]
+CMD ["streamlit", "run", "main.py"]
