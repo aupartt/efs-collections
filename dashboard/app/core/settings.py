@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file="./app/.env", case_sensitive=False, extra="ignore")
+    model_config = SettingsConfigDict(env_file="./dashboard/.env", case_sensitive=False, extra="ignore")
 
     LOGGING_LEVEL: str = "INFO"
     ENVIRONMENT: str = "dev"

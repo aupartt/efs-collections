@@ -53,6 +53,26 @@ services:
   # Data Collection Services
   # ---------------------------------------------------------------------------
 
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: ./Dockerfile
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-dev}
+      POSTGRES_USER: ${POSTGRES_GRAFANA_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_GRAFANA_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB}
+      LOKI_URL: http://${LOKI_HOST}:3100
+    ports:
+      - 8501:8501
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+
   cli:
     build: 
       context: .
