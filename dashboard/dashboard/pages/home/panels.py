@@ -106,6 +106,7 @@ def dataframe_collections(data: pd.DataFrame, container: DeltaGenerator = st, **
 
     if len(selected.selection.rows) == 0:
         st.session_state.selected_collection = None
+        st.session_state.selected_event = None
         return
 
     st.session_state.selected_collection = df.iloc[selected.selection.rows[0]].name
