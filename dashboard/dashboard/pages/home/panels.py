@@ -320,4 +320,5 @@ def progress_start_in_days(collection: pd.DataFrame, container: DeltaGenerator =
     """,
         unsafe_allow_html=True,
     )
-    container.progress(current_days / total_days, f"Débute {text}")
+    rate = current_days / total_days
+    container.progress(min(rate, 1.0), f"Débute {text}")
