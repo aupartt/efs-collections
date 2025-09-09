@@ -13,6 +13,16 @@ def display_view(data: pd.DataFrame, container: DeltaGenerator):
     selected_collection = st.session_state.selected_collection
     collection = data.loc[selected_collection] if selected_collection else pd.Series()
 
+    container.markdown(
+        """
+        <style>
+            section.stSidebar  {
+                width: 100%;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     container.subheader("Évènements", divider="red")
     event_list_container = container.container(
         height=100 if collection.empty else "stretch",
