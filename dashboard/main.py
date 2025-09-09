@@ -15,7 +15,6 @@ def main():
         display_page()
     except Exception as e:
         print(f"ERROR: {e}")
-        raise e
 
 
 if __name__ == "__main__":

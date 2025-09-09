@@ -50,8 +50,6 @@ def display_page():
         display_collection_details(collection, container=main)
         display_event_details(container=main)
 
-        print("end page")
-
     except Exception as e:
         print(f"Something went wrong: {e}")
         raise e
