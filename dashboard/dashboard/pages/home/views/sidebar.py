@@ -17,7 +17,7 @@ def display_view(data: pd.DataFrame, container: DeltaGenerator):
         """
         <style>
             section.stSidebar  {
-                width: 100%;
+                width: 100% !important;
             }
         </style>
         """,
