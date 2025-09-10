@@ -357,3 +357,8 @@ def event_schedules(data: pd.DataFrame, container: DeltaGenerator = st):
             width=250,
             height=160,
         )
+
+
+def divider(container: DeltaGenerator = st):
+    _, mid, _ = container.columns([1, 2, 1])
+    mid.divider()

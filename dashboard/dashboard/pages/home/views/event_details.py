@@ -24,7 +24,7 @@ def display_view(container: DeltaGenerator):
 
     panels.event_base_metrics(records, container=event_container)
 
-    event_container.line_chart(records, x="created_at", y="total_slots")
+    panels.divider(container=event_container)
 
     c1, c2 = event_container.columns([2, 2])
     c1.markdown("**Places disponibles**")

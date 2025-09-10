@@ -34,6 +34,8 @@ def display_view(collection: pd.Series, container: DeltaGenerator = st):
     panels.progress_start_in_days(collection, container=c1)
     panels.map_locations(collection, container=c2, height=250)
 
+    panels.divider(container=collection_container)
+
     c1, c2 = collection_container.columns([1, 6])
     records = services.get_collection_snapshots([st.session_state.selected_collection], only_last=False)
     last_record = records.iloc[-1]
