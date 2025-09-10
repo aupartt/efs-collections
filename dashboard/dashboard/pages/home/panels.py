@@ -243,16 +243,17 @@ def bar_next_collections(data: pd.DataFrame, container: DeltaGenerator = st, hei
 
 
 def area_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
-    df = data[["created_at", "nb_places_reservees_st", "nb_places_restantes_st", "nb_places_totales_st"]].copy()
-    df.rename(columns={"created_at": "Date", "nb_places_reservees_st": "Places réservées"}, inplace=True)
+    df = data[
+        ["created_at", "taux_remplissage", "nb_places_reservees_st", "nb_places_restantes_st", "nb_places_totales_st"]
+    ].copy()
 
     container.markdown("**Places réservées dans le temps**")
     chart = (
         alt.Chart(df)
         .mark_area(line={"color": "primary"}, point={"size": 15}, height=min(500, height - 45))
         .encode(
-            alt.X("Date").axis(format="%d/%m/%y"),
-            alt.Y("Places réservées").scale(domain=[0, df.nb_places_totales_st.max()]),
+            alt.X("created_at", title="Date").axis(format="%d/%m/%y"),
+            alt.Y("taux_remplissage", title="Taux de remplissage").scale(domain=[0, 100]),
         )
     )
     container.altair_chart(chart)
