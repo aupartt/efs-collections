@@ -332,3 +332,28 @@ def event_base_metrics(data: pd.DataFrame, container: DeltaGenerator = st):
     subc.metric("Places totale", last_record.total_slots)
     subc.metric("De", last_record.timetable_min.strftime("%H:%M"))
     subc.metric("à", last_record.timetable_max.strftime("%H:%M"))
+
+
+def event_schedules(data: pd.DataFrame, container: DeltaGenerator = st):
+    df_timet = []
+    for _, row in data.iterrows():
+        new_row = defaultdict(int)
+        new_row["created_at"] = row.created_at
+        for k, v in row.timetables.items():
+            new_row[int(k[:2])] += v
+        df_timet.append(new_row)
+
+    df_timet = pd.DataFrame(df_timet)
+
+    container.markdown("**Places par tranches horaires**")
+    subc = container.container(horizontal=True, horizontal_alignment="left")
+    for col in df_timet.drop(columns=["created_at"]):
+        subc.metric(
+            f"{col}h - {col + 1}h",
+            df_timet[col].iloc[-1],
+            chart_data=df_timet[col],
+            chart_type="area",
+            border=True,
+            width=250,
+            height=160,
+        )
