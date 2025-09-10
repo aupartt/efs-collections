@@ -323,3 +323,12 @@ def progress_start_in_days(collection: pd.DataFrame, container: DeltaGenerator =
     )
     rate = current_days / total_days
     container.progress(min(rate, 1.0), f"Débute {text}")
+
+
+def event_base_metrics(data: pd.DataFrame, container: DeltaGenerator = st):
+    last_record = data.iloc[-1]
+
+    subc = container.container(horizontal=True, horizontal_alignment="center")
+    subc.metric("Places totale", last_record.total_slots)
+    subc.metric("De", last_record.timetable_min.strftime("%H:%M"))
+    subc.metric("à", last_record.timetable_max.strftime("%H:%M"))

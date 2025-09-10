@@ -20,15 +20,13 @@ repos:
   rev: 1.8.6
   hooks:
     - id: bandit
-      environment:
-        - PYTHONIOENCODING=utf-8
       name: bandit
       exclude: ^tests/
       args:
         - -r
         - collector/collector
         - packages/crawler
-        - dashboard
+        - dashboard/dashboard
 
 - repo: local
   hooks:

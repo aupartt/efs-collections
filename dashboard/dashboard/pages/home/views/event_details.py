@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
+import dashboard.pages.home.panels as panels
 import dashboard.pages.home.services as services
 
 
@@ -20,9 +21,8 @@ def display_view(container: DeltaGenerator):
         return
 
     records = services.get_event_schedules(event_ids=[selected_event], only_last=False)
-    last_record = records.iloc[-1]
 
-    event_container.metric("Nombre de places", last_record.total_slots)
+    panels.event_base_metrics(records, container=event_container)
 
     event_container.line_chart(records, x="created_at", y="total_slots")
 
