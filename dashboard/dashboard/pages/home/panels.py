@@ -330,6 +330,7 @@ def event_base_metrics(data: pd.DataFrame, container: DeltaGenerator = st):
 
     subc = container.container(horizontal=True, horizontal_alignment="center")
     subc.metric("Places totale", last_record.total_slots)
+    subc.metric("Le", last_record.date.strftime("%d/%m/%Y"))
     subc.metric("De", last_record.timetable_min.strftime("%H:%M"))
     subc.metric("à", last_record.timetable_max.strftime("%H:%M"))
 
