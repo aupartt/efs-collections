@@ -297,8 +297,9 @@ def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st):
         horizontal_alignment="left",
     )
     subcontainer = _container.container(width="stretch", height="content", horizontal=True)
+    subcontainer.metric("Nombre de collectes", f"{df.shape[0]}")
     subcontainer.metric("Durée d'une collecte", f"{round(mean_duration_days.mean(), 2)} jours")
-    subcontainer.metric("Nombre de places", f"{round(df.nb_places_totales_st.mean())} places")
+    subcontainer.metric("Nombre de places", f"{round(df.nb_places_totales_st.mean())}")
     subcontainer.metric("Taux de remplissage", f"{round(df.taux_remplissage.mean())}%")
 
     fill_rate_next_week = df.loc[df.end_date <= (datetime.now() + timedelta(days=7)), "taux_remplissage"].mean()
