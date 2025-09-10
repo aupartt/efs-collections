@@ -38,6 +38,9 @@ def display_page():
     main.subheader("Informations générale", divider="red")
     # Row 2
     panels.mean_slots_stats(df, container=main)
+
+    panels.divider(container=main)
+
     # Row 3
     r3c1, r3c2 = main.columns([3, 2])
     panels.bar_next_collections(df, container=r3c1, height=300)
