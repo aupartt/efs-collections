@@ -158,5 +158,5 @@ uv run pytest
 
 ⚠️ Streamlit dashboard need a .env in `./dashboard/.env` (to avoid conflict with the one at `root`)
 ```bash
-streamlit run dashboard/main.py
+uv run streamlit run dashboard/main.py
 ```
