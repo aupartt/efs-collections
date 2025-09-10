@@ -10,11 +10,8 @@ def init():
 
 
 def main():
-    try:
-        init()
-        display_page()
-    except Exception as e:
-        print(f"ERROR: {e}")
+    init()
+    display_page()
 
 
 if __name__ == "__main__":

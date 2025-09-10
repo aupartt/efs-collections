@@ -17,39 +17,32 @@ def _get_data() -> pd.DataFrame:
 
 
 def display_page():
-    try:
-        st.set_page_config(
-            page_title="Home | ma-collecte", page_icon="🩸", layout="wide", initial_sidebar_state="expanded"
-        )
+    st.set_page_config(page_title="Home | ma-collecte", page_icon="🩸", layout="wide", initial_sidebar_state="expanded")
 
-        # Data
-        df = _get_data()
+    # Data
+    df = _get_data()
 
-        main = st.container(border=None)
-        sidebar = st.sidebar.container(width="stretch", border=None)
+    main = st.container(border=None)
+    sidebar = st.sidebar.container(width="stretch", border=None)
 
-        # Sidebar
-        display_sidebar(df, container=sidebar)
+    # Sidebar
+    display_sidebar(df, container=sidebar)
 
-        main.title("Collectes mobiles (EFS) en Bretagne.")
+    main.title("Collectes mobiles (EFS) en Bretagne.")
 
-        selected_collection = st.session_state.selected_collection
-        collection = df.loc[selected_collection] if selected_collection else pd.Series()
+    selected_collection = st.session_state.selected_collection
+    collection = df.loc[selected_collection] if selected_collection else pd.Series()
 
-        # Global informations
-        # panels.calendar_collections(data, container=container, height=300)
-        main.subheader("Informations générale", divider="red")
-        # Row 2
-        panels.mean_slots_stats(df, container=main)
-        # Row 3
-        r3c1, r3c2 = main.columns([3, 2])
-        panels.bar_next_collections(df, container=r3c1, height=300)
-        panels.bar_day_of_week(df, container=r3c2, height=300)
+    # Global informations
+    # panels.calendar_collections(data, container=container, height=300)
+    main.subheader("Informations générale", divider="red")
+    # Row 2
+    panels.mean_slots_stats(df, container=main)
+    # Row 3
+    r3c1, r3c2 = main.columns([3, 2])
+    panels.bar_next_collections(df, container=r3c1, height=300)
+    panels.bar_day_of_week(df, container=r3c2, height=300)
 
-        # Views
-        display_collection_details(collection, container=main)
-        display_event_details(container=main)
-
-    except Exception as e:
-        print(f"Something went wrong: {e}")
-        raise e
+    # Views
+    display_collection_details(collection, container=main)
+    display_event_details(container=main)
