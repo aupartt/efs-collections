@@ -1,11 +1,13 @@
+from typing import Callable, Concatenate, ParamSpec, TypeVar
+
 from sqlalchemy import MetaData, Table
 from sqlalchemy.engine import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from dashboard.core.settings import settings
 
-engine = create_engine(settings.POSTGRES_URL, pool_size=10, max_overflow=20)
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+engine = None
+SessionLocal = None
 
 metadata = MetaData()
 
@@ -20,15 +22,24 @@ class tables:
     schedules = Table("schedules", metadata, autoload_with=engine)
 
 
-def with_session(fn):
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def with_session(fn: Callable[Concatenate[Session, P], R]) -> Callable[P, R]:
     """Function decorator to get database session"""
 
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        global engine, SessionLocal
+
+        if engine is None:
+            engine = create_engine(settings.POSTGRES_URL, pool_size=10, max_overflow=20)
+        if SessionLocal is None:
+            SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
         with SessionLocal() as session:
             try:
                 return fn(session, *args, **kwargs)
-            except Exception as e:
-                print(f"Something went wrong with PostGres: {str(e)}")
             finally:
                 session.close()
 
