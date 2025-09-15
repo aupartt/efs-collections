@@ -24,7 +24,8 @@ class CollectType(TypedDict):
 
 class SessionState(TypedDict):
     limit: int | None
-    selected_collection: list
+    selected_collection: int | None
+    selected_event: int | None
     collect_types: dict[str, CollectType]
 
 
