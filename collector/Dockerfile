@@ -18,7 +18,7 @@ ENV UV_LINK_MODE=copy
 # Use --workspace to indicate UV should treat this as a monorepo
 # --no-dev to avoid installing dev dependencies in the final image
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+    uv sync --frozen --package collector --no-install-project --no-dev
 
 # Set the PATH and PYTHONPATH for the application
 ENV PATH="/app/.venv/bin:$PATH"

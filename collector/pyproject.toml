@@ -8,10 +8,10 @@ dependencies = [
     "aio-pika>=9.5.5",
     "aiohttp>=3.12.15",
     "alembic>=1.16.4",
-    "api-carto-client",  # This will use workspace version
+    "api-carto-client",
     "async-lru>=2.0.5",
     "asyncpg>=0.30.0",
-    "crawler",  # This will use workspace version
+    "crawler",
     "loki-logger-handler>=1.1.2",
     "pydantic-settings==2.6.0",
     "sqlalchemy>=2.0.42",
@@ -28,8 +28,6 @@ dev = [
     "pytest-mock>=3.14.1",
 ]
 
-# Remove the separate uv.lock - workspace will manage this
-# Add build system
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
