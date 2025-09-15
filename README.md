@@ -12,12 +12,9 @@ The system automatically:
 - ⏰ **Schedules** regular updates
 
 So we can:
-- 📊 **Analyze** the data using Grafana
+- 📊 **Analyze** the data using Grafana and Streamlit
 - 🚨 **Create alerts** for poorly filled collections
 - 👀 **Improve** the visibility of these collections
-
-Next:
-- 🤖 Use AI to generate alerts 
 
 ## 📃 Docs
 - [EFS's API details](./docs/efs_api_info.md)
@@ -157,3 +154,9 @@ uv sync --dev
 uv run pytest
 ```
 
+**Start streamlit dashboard**
+
+⚠️ Streamlit dashboard need a .env in `./dashboard/.env` (to avoid conflict with the one at `root`)
+```bash
+uv run streamlit run dashboard/main.py
+```

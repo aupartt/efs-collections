@@ -100,7 +100,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "jours_avant_debut (firstNotNull)"
+              "options": "jours_avant_debut"
             },
             "properties": [
               {
@@ -153,7 +153,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "taux_remplissage (firstNotNull)"
+              "options": "taux_remplissage"
             },
             "properties": [
               {
@@ -222,7 +222,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "jours_avant_fin (firstNotNull)"
+              "options": "jours_avant_fin"
             },
             "properties": [
               {
@@ -287,7 +287,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  -1 as location_test,\r\n  g.location_id,\r\n  g.start_date, \r\n  g.end_date,\r\n  DATE_PART('day', g.start_date - NOW()) + 1 AS \"jours_avant_debut\",\r\n  DATE_PART('day', g.end_date - NOW()) + 1 AS \"jours_avant_fin\",\r\n  sub.taux_remplissage,\r\n  sub.created_at\r\nFROM \r\n  collection_groups g\r\nINNER JOIN (\r\n  SELECT\r\n    s.collection_group_id,\r\n    s.taux_remplissage,\r\n    s.created_at\r\n  FROM\r\n    collection_group_snapshots s\r\n) sub ON sub.collection_group_id = g.id\r\nINNER JOIN locations l ON l.id = g.location_id\r\nWHERE \r\n  g.end_date >= NOW()",
+          "rawSql": "SELECT\r\n  -1 as location_test,\r\n  g.id as collection_group_id,\r\n  g.location_id,\r\n  g.start_date, \r\n  g.end_date,\r\n  DATE_PART('day', g.start_date - NOW()) + 1 AS \"jours_avant_debut\",\r\n  DATE_PART('day', g.end_date - NOW()) + 1 AS \"jours_avant_fin\"\r\nFROM \r\n  collection_groups g\r\nINNER JOIN locations l ON l.id = g.location_id\r\nWHERE \r\n  g.end_date >= NOW()",
           "refId": "Collections",
           "sql": {
             "columns": [
@@ -361,10 +361,46 @@
             }
           },
           "table": "collection_groups"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P44368ADAD746BC27"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT \r\n    s1.collection_group_id,\r\n    s1.taux_remplissage,\r\n    s1.created_at\r\nFROM\r\n    collection_group_snapshots s1\r\nLEFT JOIN (\r\n    SELECT\r\n        s2.id,\r\n        ROW_NUMBER() OVER (\r\n            PARTITION BY s2.collection_group_id\r\n            ORDER BY s2.created_at DESC\r\n        ) AS row_number\r\n    FROM\r\n        collection_group_snapshots s2\r\n    ) sub\r\nON s1.id = sub.id\r\nWHERE sub.row_number = 1",
+          "refId": "Latest_Snapshots",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Prochains lieux recevant des collectes",
       "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "collection_group_id",
+            "mode": "inner"
+          }
+        },
         {
           "id": "filterByValue",
           "options": {
@@ -405,86 +441,26 @@
           }
         },
         {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              " ": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "collection_group_id": {
-                "aggregations": []
-              },
-              "end_date": {
-                "aggregations": [
-                  "max"
-                ]
-              },
-              "group_code": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "jours_avant_debut": {
-                "aggregations": [
-                  "firstNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "jours_avant_fin": {
-                "aggregations": [
-                  "firstNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "lien": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "location_id": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "sampling_location_code": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "start_date": {
-                "aggregations": [
-                  "min"
-                ]
-              },
-              "taux_remplissage": {
-                "aggregations": [
-                  "firstNotNull"
-                ],
-                "operation": "aggregate"
-              }
-            }
-          }
-        },
-        {
           "id": "organize",
           "options": {
-            "excludeByName": {},
+            "excludeByName": {
+              "collection_group_id": true,
+              "created_at": true,
+              "end_date": true,
+              "location_test": true,
+              "start_date": true
+            },
             "includeByName": {},
             "indexByName": {
-              "group_code (lastNotNull)": 2,
-              "jours_avant_debut (min)": 4,
-              "jours_avant_fin (max)": 5,
-              "lien (lastNotNull)": 0,
-              "location_id": 1,
-              "sampling_location_code (lastNotNull)": 3,
-              "taux_remplissage (lastNotNull)": 6
+              "jours_avant_debut (firstNotNull)": 1,
+              "jours_avant_fin (firstNotNull)": 2,
+              "location_id": 0,
+              "taux_remplissage (lastNotNull)": 3
             },
-            "renameByName": {}
+            "renameByName": {
+              "jours_avant_debut": "",
+              "taux_remplissage (lastNotNull)": "taux_remplissage"
+            }
           }
         }
       ],
@@ -1370,5 +1346,5 @@
   "timezone": "browser",
   "title": "Global - Overview",
   "uid": "global-main-overview",
-  "version": 2
+  "version": 3
 }

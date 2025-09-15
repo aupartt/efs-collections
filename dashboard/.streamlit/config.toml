@@ -1,0 +1,7 @@
+[server]
+headless = true
+
+[theme]
+base = "dark"
+primaryColor = "#ff4b4b"
+chartCategoricalColors = ["#ff4b4b"]
