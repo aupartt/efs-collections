@@ -1,7 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-import altair as alt
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
@@ -11,13 +10,13 @@ from streamlit_calendar import calendar
 from dashboard.config import Colors
 
 
-def count_collect_types(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
+def count_collect_types(data: pd.DataFrame, container: DeltaGenerator = st.container(), height: int = 500):
     for t, c in zip(st.session_state.collect_types.values(), st.columns(3)):
         count = data.loc[data[f"give_{t['en']}"], "n_collections"].sum()
         container.metric(t["fr"].capitalize(), count, height=int(height / 3), width="stretch", delta_color="normal")
 
 
-def calendar_collections(data: pd.DataFrame, container: DeltaGenerator = st.container(), **kwargs) -> dict:
+def calendar_collections(data: pd.DataFrame, container: DeltaGenerator = st.container(), **kwargs):
     df = data[["taux_remplissage", "city", "post_code", "start_date", "end_date"]].copy()
 
     calendar_options = {
@@ -78,77 +77,6 @@ def calendar_collections(data: pd.DataFrame, container: DeltaGenerator = st.cont
             st.write(st.session_state.selected_collection)
 
 
-def dataframe_collections(data: pd.DataFrame, container: DeltaGenerator = st, **kwargs) -> list[int]:
-    df = data[["taux_remplissage", "city", "post_code", "start_date", "end_date"]].copy()
-
-    df.taux_remplissage = df.taux_remplissage / 100
-    df.post_code = df.post_code.str.slice(0, 2)
-
-    column_config = {
-        "taux_remplissage": st.column_config.ProgressColumn(
-            "Taux de Remplissage", min_value=0, max_value=1
-        ),  # st.column_config.NumberColumn("Taux de Remplissage", format="percent", width="small"),
-        "city": st.column_config.TextColumn("Ville"),
-        "post_code": st.column_config.TextColumn("CP", width=30),
-        "start_date": st.column_config.DatetimeColumn("Débute le", format="DD/MM/YY", width="small"),
-        "end_date": st.column_config.DatetimeColumn("Fini le", format="DD/MM/YY", width="small"),
-    }
-
-    selected = container.dataframe(
-        df,
-        width="stretch",
-        on_select="rerun",
-        selection_mode="single-row",
-        column_config=column_config,
-        hide_index=True,
-        **kwargs,
-    )
-
-    if len(selected.selection.rows) == 0:
-        st.session_state.selected_collection = None
-        st.session_state.selected_event = None
-        return
-
-    st.session_state.selected_collection = df.iloc[selected.selection.rows[0]].name
-
-
-def dataframe_events(data: pd.DataFrame, container: DeltaGenerator = st):
-    df = data.drop(columns=["lp_code", "created_at", "collection_group_id"])
-
-    def _filter_date(serie: pd.Series, fn: callable):
-        row = serie.values
-        if row[0] is None:
-            return row[1]
-        elif row[1] is None:
-            return row[0]
-        return fn([row[0], row[1]])
-
-    df["start_time"] = df[["morning_start_time", "afternoon_start_time"]].apply(_filter_date, fn=min, axis=1)
-    df["end_time"] = df[["morning_end_time", "afternoon_end_time"]].apply(_filter_date, fn=max, axis=1)
-    df = df.drop(columns=df.filter(regex=r"afternoon_|morning_").columns)
-
-    column_config = {
-        "date": st.column_config.DatetimeColumn("Date", format="DD/MM/YY", width="small"),
-        "start_time": st.column_config.DatetimeColumn("Débute à", format="HH:mm", width="small"),
-        "end_time": st.column_config.DatetimeColumn("Fini à", format="HH:mm", width="small"),
-    }
-
-    selected = container.dataframe(
-        df,
-        width="stretch",
-        on_select="rerun",
-        selection_mode="single-row",
-        column_config=column_config,
-        hide_index=True,
-    )
-
-    if len(selected.selection.rows) == 0:
-        st.session_state.selected_event = None
-        return
-
-    st.session_state.selected_event = df.iloc[selected.selection.rows[0]].name
-
-
 def _create_layer(data: pd.DataFrame, collect_type: str):
     df = data[data[f"give_{collect_type}"]].to_dict("records")
     return pdk.Layer(
@@ -168,7 +96,7 @@ def _create_layer(data: pd.DataFrame, collect_type: str):
     )
 
 
-def map_locations(data: pd.Series | pd.DataFrame, container: DeltaGenerator = st, **kwargs):
+def map_locations(data: pd.Series | pd.DataFrame, container: DeltaGenerator = st.container(), **kwargs):
     df = data.copy()
 
     base_lat = 48.17
@@ -209,14 +137,14 @@ def map_locations(data: pd.Series | pd.DataFrame, container: DeltaGenerator = st
     deck = pdk.Deck(
         layers=layers,
         initial_view_state=view_state,
-        tooltip={"text": "{full_address}\nDu {start_date} au {end_date}"},  # Événements: {n_collections}\n
+        tooltip={"text": "{full_address}\nDu {start_date} au {end_date}"},  # type: ignore
         map_style="dark" if st.context.theme.type == "dark" else "road",
     )
 
     return container.pydeck_chart(deck, **kwargs)
 
 
-def bar_next_collections(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500, **kwargs):
+def bar_next_collections(data: pd.DataFrame, container: DeltaGenerator = st.container(), height: int = 500, **kwargs):
     df = data[["start_date", "created_at"]].copy()
 
     df["semaine"] = df.start_date.apply(lambda x: x.week)
@@ -242,24 +170,7 @@ def bar_next_collections(data: pd.DataFrame, container: DeltaGenerator = st, hei
     )
 
 
-def area_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
-    df = data[
-        ["created_at", "taux_remplissage", "nb_places_reservees_st", "nb_places_restantes_st", "nb_places_totales_st"]
-    ].copy()
-
-    container.markdown("**Places réservées dans le temps**")
-    chart = (
-        alt.Chart(df)
-        .mark_area(line={"color": "primary"}, point={"size": 15}, height=min(500, height - 45))
-        .encode(
-            alt.X("created_at", title="Date").axis(format="%d/%m/%y"),
-            alt.Y("taux_remplissage", title="Taux de remplissage").scale(domain=[0, 100]),
-        )
-    )
-    container.altair_chart(chart)
-
-
-def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st, height: int = 500):
+def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st.container(), height: int = 500):
     df = data[["efs_id", "start_date", "end_date"]].copy()
 
     # day_map = {0: "Lundi", 1: "Mardi", 2: "Mercredi", 3: "Jeudi", 4: "Vendredi", 5: "Samedi", 6: "Dimanche"}
@@ -283,7 +194,7 @@ def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st, height: 
     )
 
 
-def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st):
+def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st.container()):
     df = data[["start_date", "end_date", "taux_remplissage", "nb_places_totales_st"]].copy()
 
     mean_duration_days = df.end_date.dt.date - df.start_date.dt.date + timedelta(days=1)
@@ -307,61 +218,6 @@ def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st):
     subcontainer.metric("Taux de remplissage (7j)", f"{round(fill_rate_next_week)}%")
 
 
-def progress_start_in_days(collection: pd.DataFrame, container: DeltaGenerator = st):
-    total_days = (collection.start_date.date() - collection.created_at.date()).days
-    current_days = (datetime.now().date() - collection.created_at.date()).days
-
-    dt_days = total_days - current_days
-    text = f"dans **{dt_days}j**" if dt_days > 0 else "aujourd'hui"
-    container.markdown(
-        f"""
-    <style>
-    .stProgress > div:nth-child(2) > div > div > div {{
-        background-color: {Colors.Str.lightred};
-    }}
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
-    rate = current_days / total_days
-    container.progress(min(rate, 1.0), f"Débute {text}")
-
-
-def event_base_metrics(data: pd.DataFrame, container: DeltaGenerator = st):
-    last_record = data.iloc[-1]
-
-    subc = container.container(horizontal=True, horizontal_alignment="center")
-    subc.metric("Places totale", last_record.total_slots)
-    subc.metric("Le", last_record.date.strftime("%d/%m/%Y"))
-    subc.metric("De", last_record.timetable_min.strftime("%H:%M"))
-    subc.metric("à", last_record.timetable_max.strftime("%H:%M"))
-
-
-def event_schedules(data: pd.DataFrame, container: DeltaGenerator = st):
-    df_timet = []
-    for _, row in data.iterrows():
-        new_row = defaultdict(int)
-        new_row["created_at"] = row.created_at
-        for k, v in row.timetables.items():
-            new_row[int(k[:2])] += v
-        df_timet.append(new_row)
-
-    df_timet = pd.DataFrame(df_timet)
-
-    container.markdown("**Places par tranches horaires**")
-    subc = container.container(horizontal=True, horizontal_alignment="left")
-    for col in df_timet.drop(columns=["created_at"]):
-        subc.metric(
-            f"{col}h - {col + 1}h",
-            df_timet[col].iloc[-1],
-            chart_data=df_timet[col],
-            chart_type="area",
-            border=True,
-            width=250,
-            height=160,
-        )
-
-
-def divider(container: DeltaGenerator = st):
+def divider(container: DeltaGenerator = st.container()):
     _, mid, _ = container.columns([1, 2, 1])
     mid.divider()
