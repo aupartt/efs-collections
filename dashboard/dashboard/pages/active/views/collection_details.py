@@ -6,19 +6,25 @@ import dashboard.pages.active.panels as panels
 import dashboard.services as services
 
 
-def display_view(collection: pd.Series, container: DeltaGenerator = st.container()):
+def display_view(data: pd.DataFrame, container: DeltaGenerator = st.container()):
     container.subheader("Collecte - détails", divider="red")
 
+    selected_collection = st.query_params.get("selected_collection", None)
+    if st.session_state.selected_collection is not None:
+        selected_collection = st.session_state.selected_collection
+
     collection_container = container.container(
-        height=250 if collection.empty else "stretch",
-        horizontal_alignment="center" if collection.empty else "left",
-        vertical_alignment="center" if collection.empty else "top",
+        height=250 if selected_collection is None else "stretch",
+        horizontal_alignment="center" if selected_collection is None else "left",
+        vertical_alignment="center" if selected_collection is None else "top",
         border=False,
     )
 
-    if collection.empty:
+    if selected_collection is None:
         collection_container.text("aucune collecte séléctionné.")
         return
+
+    collection = data.loc[int(selected_collection)] if selected_collection else pd.Series()
 
     c1, c2 = collection_container.columns([1, 2], gap="large")
     c1.markdown(f"##### {collection.full_address}")
@@ -31,13 +37,13 @@ def display_view(collection: pd.Series, container: DeltaGenerator = st.container
     subcontainer.link_button("Lien collecte", url=f"http://{collection.url_blood}", icon=":material/open_in_new:")
 
     c1.html("<br><br>")
-    panels.progress_start_in_days(collection, container=c1)
+    panels.progress_start_in_days(collection, container=c1)  # type: ignore
     panels.map_locations(collection, container=c2, height=250)
 
     panels.divider(container=collection_container)
 
     c1, c2 = collection_container.columns([1, 6])
-    records = services.get_collection_snapshots([st.session_state.selected_collection], only_last=False)
+    records = services.get_collection_snapshots([int(selected_collection)], only_last=False)
     last_record = records.iloc[-1]
     m_subc = c1.container(height=350, border=False, vertical_alignment="distribute")
     m_subc.metric("Places totales", last_record.nb_places_totales_st)

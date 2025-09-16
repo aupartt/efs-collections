@@ -7,7 +7,9 @@ import dashboard.services as services
 
 def display_view(container: DeltaGenerator):
     container.subheader("Évènement - détails", divider="red")
-    selected_event = st.session_state.selected_event
+    selected_event = st.query_params.get("selected_event", None)
+    if st.session_state.selected_event is not None:
+        selected_event = st.session_state.selected_event
 
     event_container = container.container(
         height=250 if selected_event is None else "stretch",
@@ -16,11 +18,11 @@ def display_view(container: DeltaGenerator):
         border=False,
     )
 
-    if not selected_event:
+    if selected_event is None:
         event_container.text("aucun évènement séléctionné.")
         return
 
-    records = services.get_event_schedules(event_ids=[selected_event], only_last=False)
+    records = services.get_event_schedules(event_ids=[int(selected_event)], only_last=False)
 
     panels.event_base_metrics(records, container=event_container)
 

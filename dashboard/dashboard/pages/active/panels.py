@@ -113,7 +113,13 @@ def dataframe_collections(data: pd.DataFrame, container: DeltaGenerator = st.con
         st.session_state.selected_event = None
         return
 
-    st.session_state.selected_collection = df.iloc[selected["selection"]["rows"][0]].name
+    selected_collection = df.iloc[selected["selection"]["rows"][0]].name
+    st.session_state.selected_collection = selected_collection
+    st.query_params["selected_collection"] = selected_collection
+    # Reset event
+    st.session_state.selected_event = None
+    if "selected_event" in st.query_params:
+        del st.query_params["selected_event"]
 
 
 def dataframe_events(data: pd.DataFrame, container: DeltaGenerator = st.container()):
@@ -153,7 +159,9 @@ def dataframe_events(data: pd.DataFrame, container: DeltaGenerator = st.containe
         st.session_state.selected_event = None
         return
 
-    st.session_state.selected_event = df.iloc[selected["selection"]["rows"][0]].name
+    selected_event = df.iloc[selected["selection"]["rows"][0]].name
+    st.session_state.selected_event = selected_event
+    st.query_params["selected_event"] = selected_event
 
 
 def _create_layer(data: pd.DataFrame, collect_type: str):

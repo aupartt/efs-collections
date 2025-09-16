@@ -29,9 +29,6 @@ def display_page():
 
     main.title("Informations sur les collectes actives.")
 
-    selected_collection = st.session_state.selected_collection
-    collection = df.loc[selected_collection] if selected_collection else pd.Series()
-
     # Views
-    display_collection_details(collection, container=main)
+    display_collection_details(df, container=main)  # type: ignore
     display_event_details(container=main)
