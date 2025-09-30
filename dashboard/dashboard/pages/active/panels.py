@@ -1,6 +1,8 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+from typing import Callable
 
+import altair as alt
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
@@ -75,6 +77,91 @@ def calendar_collections(data: pd.DataFrame, container: DeltaGenerator = st.cont
         if selected:
             st.session_state["selected_collection"] = int(selected["eventClick"]["event"]["id"])
             st.write(st.session_state.selected_collection)
+
+
+def dataframe_collections(data: pd.DataFrame, container: DeltaGenerator = st.container(), **kwargs):
+    df = data[["taux_remplissage", "city", "post_code", "start_date", "end_date"]].copy()
+
+    df.taux_remplissage = df.taux_remplissage / 100
+    df.post_code = df.post_code.str.slice(0, 2)
+
+    column_config = {
+        "taux_remplissage": st.column_config.ProgressColumn(
+            "Taux de Remplissage", min_value=0, max_value=1
+        ),  # st.column_config.NumberColumn("Taux de Remplissage", format="percent", width="small"),
+        "city": st.column_config.TextColumn("Ville"),
+        "post_code": st.column_config.TextColumn("CP", width=30),
+        "start_date": st.column_config.DatetimeColumn("Débute le", format="DD/MM/YY", width="small"),
+        "end_date": st.column_config.DatetimeColumn("Fini le", format="DD/MM/YY", width="small"),
+    }
+
+    selected = container.dataframe(
+        df,
+        width="stretch",
+        on_select="rerun",
+        selection_mode="single-row",
+        column_config=column_config,
+        hide_index=True,
+        **kwargs,
+    )
+
+    if "selection" not in selected or "rows" not in selected["selection"]:
+        return
+
+    if len(selected["selection"]["rows"]) == 0:
+        st.session_state.selected_collection = None
+        st.session_state.selected_event = None
+        return
+
+    selected_collection = df.iloc[selected["selection"]["rows"][0]].name
+    st.session_state.selected_collection = selected_collection
+    st.query_params["selected_collection"] = selected_collection
+    # Reset event
+    st.session_state.selected_event = None
+    if "selected_event" in st.query_params:
+        del st.query_params["selected_event"]
+
+
+def dataframe_events(data: pd.DataFrame, container: DeltaGenerator = st.container()):
+    df = data.drop(columns=["lp_code", "created_at", "collection_group_id"])
+
+    def _filter_date(serie: pd.Series, fn: Callable):
+        row = serie.values
+        if row[0] is None:
+            return row[1]
+        elif row[1] is None:
+            return row[0]
+        return fn([row[0], row[1]])
+
+    df["start_time"] = df[["morning_start_time", "afternoon_start_time"]].apply(_filter_date, fn=min, axis=1)
+    df["end_time"] = df[["morning_end_time", "afternoon_end_time"]].apply(_filter_date, fn=max, axis=1)
+    df = df.drop(columns=df.filter(regex=r"afternoon_|morning_").columns)
+
+    column_config = {
+        "date": st.column_config.DatetimeColumn("Date", format="DD/MM/YY", width="small"),
+        "start_time": st.column_config.DatetimeColumn("Débute à", format="HH:mm", width="small"),
+        "end_time": st.column_config.DatetimeColumn("Fini à", format="HH:mm", width="small"),
+    }
+
+    selected = container.dataframe(
+        df,
+        width="stretch",
+        on_select="rerun",
+        selection_mode="single-row",
+        column_config=column_config,
+        hide_index=True,
+    )
+
+    if "selection" not in selected or "rows" not in selected["selection"]:
+        return
+
+    if len(selected["selection"]["rows"]) == 0:
+        st.session_state.selected_event = None
+        return
+
+    selected_event = df.iloc[selected["selection"]["rows"][0]].name
+    st.session_state.selected_event = selected_event
+    st.query_params["selected_event"] = selected_event
 
 
 def _create_layer(data: pd.DataFrame, collect_type: str):
@@ -170,6 +257,23 @@ def bar_next_collections(data: pd.DataFrame, container: DeltaGenerator = st.cont
     )
 
 
+def area_fill_rate(data: pd.DataFrame, container: DeltaGenerator = st.container(), height: int = 500):
+    df = data[
+        ["created_at", "taux_remplissage", "nb_places_reservees_st", "nb_places_restantes_st", "nb_places_totales_st"]
+    ].copy()
+
+    container.markdown("**Places réservées dans le temps**")
+    chart = (
+        alt.Chart(df)
+        .mark_area(line={"color": "primary"}, point={"size": 15}, height=min(500, height - 45))
+        .encode(
+            alt.X("created_at", title="Date").axis(format="%d/%m/%y"),
+            alt.Y("taux_remplissage", title="Taux de remplissage").scale(domain=[0, 100]),
+        )
+    )
+    container.altair_chart(chart)
+
+
 def bar_day_of_week(data: pd.DataFrame, container: DeltaGenerator = st.container(), height: int = 500):
     df = data[["efs_id", "start_date", "end_date"]].copy()
 
@@ -216,6 +320,61 @@ def mean_slots_stats(data: pd.DataFrame, container: DeltaGenerator = st.containe
 
     fill_rate_next_week = df.loc[df.end_date <= (datetime.now() + timedelta(days=7)), "taux_remplissage"].mean()
     subcontainer.metric("Taux de remplissage (7j)", f"{round(fill_rate_next_week)}%")
+
+
+def progress_start_in_days(collection: pd.Series, container: DeltaGenerator = st.container()):
+    total_days = (collection.start_date.date() - collection.created_at.date()).days
+    current_days = (datetime.now().date() - collection.created_at.date()).days
+
+    dt_days = total_days - current_days
+    text = f"dans **{dt_days}j**" if dt_days > 0 else "aujourd'hui"
+    container.markdown(
+        f"""
+    <style>
+    .stProgress > div:nth-child(2) > div > div > div {{
+        background-color: {Colors.Str.lightred};
+    }}
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )
+    rate = current_days / total_days
+    container.progress(min(rate, 1.0), f"Débute {text}")
+
+
+def event_base_metrics(data: pd.DataFrame, container: DeltaGenerator = st.container()):
+    last_record = data.iloc[-1]
+
+    subc = container.container(horizontal=True, horizontal_alignment="center")
+    subc.metric("Places totale", last_record.total_slots)
+    subc.metric("Le", last_record.date.strftime("%d/%m/%Y"))
+    subc.metric("De", last_record.timetable_min.strftime("%H:%M"))
+    subc.metric("à", last_record.timetable_max.strftime("%H:%M"))
+
+
+def event_schedules(data: pd.DataFrame, container: DeltaGenerator = st.container()):
+    df_timet = []
+    for _, row in data.iterrows():
+        new_row = defaultdict(int)
+        new_row["created_at"] = row.created_at
+        for k, v in row.timetables.items():
+            new_row[int(k[:2])] += v
+        df_timet.append(new_row)
+
+    df_timet = pd.DataFrame(df_timet)
+
+    container.markdown("**Places par tranches horaires**")
+    subc = container.container(horizontal=True, horizontal_alignment="left")
+    for col in df_timet.drop(columns=["created_at"]).columns:
+        subc.metric(
+            f"{col}h - {int(col) + 1}h",
+            df_timet[col].iloc[-1],
+            chart_data=df_timet[col],
+            chart_type="area",
+            border=True,
+            width=250,
+            height=160,
+        )
 
 
 def divider(container: DeltaGenerator = st.container()):

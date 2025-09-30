@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
 
-import dashboard.pages.home.panels as panels
 import dashboard.services as services
+from dashboard.pages.active.views import display_collection_details, display_event_details, display_sidebar
 
 
 def _get_data() -> pd.DataFrame:
@@ -16,27 +16,19 @@ def _get_data() -> pd.DataFrame:
 
 
 def display_page():
-    st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Home | ma-collecte", page_icon="🩸", layout="wide", initial_sidebar_state="expanded")
 
     # Data
     df = _get_data()
 
     main = st.container(border=None)
+    sidebar = st.sidebar.container(width="stretch", border=None)
 
-    main.title("Collectes mobiles (EFS) en Bretagne.")
+    # Sidebar
+    display_sidebar(df, container=sidebar)
 
-    # main.subheader("Informations générale", divider="red")
+    main.title("Informations sur les collectes actives.")
 
-    panels.mean_slots_stats(df, container=main)
-
-    panels.divider(container=main)
-
-    c1, c2 = main.columns([2, 3])
-    panels.map_locations(df, container=c1, height=400)
-    panels.calendar_collections(df, container=c2, height=400)
-
-    panels.divider(container=main)
-
-    c1, c2 = main.columns([3, 2])
-    panels.bar_next_collections(df, container=c1, height=400)
-    panels.bar_day_of_week(df, container=c2, height=400)
+    # Views
+    display_collection_details(df, container=main)  # type: ignore
+    display_event_details(container=main)

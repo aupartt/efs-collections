@@ -3,7 +3,9 @@ import streamlit as st
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from dashboard.core.database import tables, with_session
+from dashboard.core.database import get_tables, with_session
+
+tables = get_tables()
 
 
 @st.cache_data

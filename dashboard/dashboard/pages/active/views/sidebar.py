@@ -2,8 +2,8 @@ import pandas as pd
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
-import dashboard.pages.home.panels as panels
-import dashboard.pages.home.services as services
+import dashboard.pages.active.panels as panels
+import dashboard.services as services
 
 
 def display_view(data: pd.DataFrame, container: DeltaGenerator):
@@ -13,15 +13,14 @@ def display_view(data: pd.DataFrame, container: DeltaGenerator):
     selected_collection = st.session_state.selected_collection
     collection = data.loc[selected_collection] if selected_collection else pd.Series()
 
-    container.markdown(
+    container.html(
         """
         <style>
             section.stSidebar  {
                 width: 100% !important;
             }
         </style>
-        """,
-        unsafe_allow_html=True,
+        """
     )
     container.subheader("Évènements", divider="red")
     event_list_container = container.container(
