@@ -25,8 +25,8 @@ class ScheduleModel(Base):
     total_slots: Mapped[int]
     collect_type: Mapped[str]
     timetables: Mapped[dict]
-    timetable_min: Mapped[time]
-    timetable_max: Mapped[time]
+    timetable_min: Mapped[time | None]
+    timetable_max: Mapped[time | None]
 
     # Relationships
     event_id: Mapped[int] = mapped_column(ForeignKey("collection_events.id", ondelete="CASCADE"))
